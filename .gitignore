@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.runtime/
+*.log
+midscene_run/
+release/
+*.env
+client_secret*.json
+credentials*.json
+google-oauth*.json
+
+release-candidate/

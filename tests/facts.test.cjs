@@ -1,0 +1,3 @@
+const test=require('node:test'),assert=require('node:assert/strict');const {preferenceBlock}=require('../desktop/facts.cjs');
+test('remote work history is not a preferred work-arrangement fact',()=>{assert.ok(preferenceBlock('Preferred work arrangement',{resume:{experience:[{location:'Remote'}]},additional:''}));assert.equal(preferenceBlock('Preferred work arrangement',{resume:{},additional:'I prefer remote work.'}),null);});
+test('attestations and unspecified salary cannot be inferred',()=>{assert.ok(preferenceBlock('Certify this application',{resume:{},additional:''}));assert.ok(preferenceBlock('Salary expectations',{resume:{},additional:''}));});

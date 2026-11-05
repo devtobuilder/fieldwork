@@ -1,0 +1,3 @@
+const test=require('node:test'),assert=require('node:assert/strict'),path=require('node:path'),fs=require('node:fs');
+const {Store}=require('../desktop/store.cjs');
+test('drafts survive reopening the local database without carrying another job answers',()=>{const dir=path.join(__dirname,'../.runtime/store-test');fs.mkdirSync(dir,{recursive:true});let db=new Store(dir);db.put('job','a',{id:'a',answers:['one']});db.put('job','b',{id:'b',answers:['two']});db.close();db=new Store(dir);assert.deepEqual(db.get('job','a').answers,['one']);assert.deepEqual(db.get('job','b').answers,['two']);db.close();});

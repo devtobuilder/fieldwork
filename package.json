@@ -1,0 +1,43 @@
+{
+  "name": "fieldwork-desktop",
+  "version": "0.2.19",
+  "private": true,
+  "type": "module",
+  "main": "desktop/main.cjs",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "npm run build && electron .",
+    "test": "node --test tests/*.test.cjs",
+    "test:evidence": "node --test tests/evidence-domain.test.cjs tests/evidence-engine.test.cjs tests/evidence-release.test.cjs",
+    "test:replay": "node scripts/replay-evidence.cjs",
+    "test:contract": "node scripts/evidence-contract.cjs",
+    "smoke:evidence": "electron scripts/evidence-staples-smoke.cjs",
+    "check": "tsc --noEmit",
+    "smoke": "npm run build && electron . --fixture-smoke",
+    "package": "npm run build && node scripts/package.mjs",
+    "release": "node scripts/promote-release.mjs",
+    "test:account-entry": "npm run build && electron . --account-entry-smoke"
+  },
+  "dependencies": {
+    "@midscene/core": "1.17.5",
+    "@midscene/web": "1.17.5",
+    "electron": "45.2.2",
+    "playwright-core": "^1.64.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "tldts": "^7.4.19",
+    "yaml": "2.9.1"
+  },
+  "devDependencies": {
+    "@electron/packager": "20.3.0",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "esbuild": "0.28.2",
+    "typescript": "7.0.2"
+  },
+  "overrides": {
+    "js-yaml": "^4.3.2",
+    "sharp": "^0.35.5",
+    "uuid": "^11.1.1"
+  }
+}

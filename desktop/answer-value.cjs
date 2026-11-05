@@ -1,0 +1,4 @@
+const {relatedOptions}=require('./option-meaning.cjs');
+const norm=value=>String(value??'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+function equivalentAnswer(field,actual,desired){if(actual===undefined||actual===null||actual==='')return false;const label=value=>field.options?.find(o=>String(o.value)===String(value))?.label??value;const a=label(actual),b=label(desired);if(field.type==='tel'||/^(?:your )?(?:phone|telephone|mobile)(?: number)?$/.test(norm(field.label))){const phone=v=>String(v).replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');if(phone(a).length>=7&&phone(a)===phone(b))return true;}if(/^(?:phone )?country(?: code)?$/.test(norm(field.label))&&/^(?:united states(?: of america)?|us|usa)$/.test(norm(b))&&(norm(a)==='1'||norm(a)==='united states 1'))return true;return norm(a)===norm(b)||relatedOptions(field,[{label:String(a),value:String(actual)}],b).length===1;}
+module.exports={equivalentAnswer};

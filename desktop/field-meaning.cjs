@@ -1,0 +1,2 @@
+const schoolQuestion=label=>{const q=String(label||'').toLowerCase();return /school|college|university|institution/.test(q)&&!/degree|graduat|enroll|when|return|year|major|project|program|\bare you\b|\bdid you\b|\bhave you\b/.test(q)&&(/^(?:which|what|name of|please specify|specify|enter|if other)\b/.test(q)||/^(?:(?:current|your|other) )?(?:school|college|university|institution)(?: name)?(?:\s*[?*])?$/.test(q));};
+module.exports={schoolQuestion};

@@ -1,0 +1,25 @@
+const test=require('node:test'),assert=require('node:assert/strict'),{resolve}=require('../desktop/canonical.cjs'),{matchOptions}=require('../desktop/dropdown.cjs'),{AccountFlow}=require('../desktop/accounts.cjs');
+test('an untracked verification step resends before looking up a code',async()=>{
+ const page={url:'https://example.test/verify',fields:[{id:'code',label:'Verification code',type:'text'}],navigation:[{id:'verify',text:'Verify'},{id:'resend',text:'Send New Code'}]};
+ let requestedAt,lookups=0;
+ const flow=new AccountFlow({profile:{resume:{contact:{email:'fixture@example.test'}}},verification:async({startedAt})=>{lookups++;assert.equal(startedAt,requestedAt);return '123456';},fillSecret:async()=>{},navigate:async(action,_page,{beforeClick})=>{if(action.id==='resend'){assert.equal(lookups,0);assert.equal(requestedAt,undefined);beforeClick();}},onVerificationRequested:at=>{requestedAt=at;}});
+ assert.equal((await flow.step(page)).recovered,true);
+ assert.ok(requestedAt>0);await flow.step(page);assert.equal(lookups,1);
+});
+const profile={resume:{contact:{city:'Austin',state:'Texas',country:'United States',postal_code:'78701',location:'Austin, TX'}},additional:'My street address is 12 Example RD. My city is Austin. My state is Texas (TX). My ZIP code is 78701. My country is United States.\nMy county is Travis, as shown for my Austin, TX location.'};
+test('street, ZIP, county and city/state confirmation remain distinct candidate fields',()=>{
+ assert.equal(resolve({label:'Street Address'},profile).value,'12 Example RD');assert.equal(resolve({label:'ZIP Code'},profile).value,'78701');assert.equal(resolve({label:'County'},profile).value,'Travis');assert.equal(resolve({label:'Please confirm your current city and state by typing it in below (for example: Austin, TX).'},profile).value,'Austin, TX');assert.equal(resolve({label:'Street Address'},{resume:{contact:{location:'Austin, TX'}}}).kind,'unknown');
+});
+test('geographic dropdowns match county/state-enriched options while distinguishing ambiguous cities',()=>{
+ assert.equal(matchOptions({label:'City'},[{label:'Austin, Travis, TX'}],'Austin').length,1);assert.equal(matchOptions({label:'State'},[{label:'TX'}],'Texas').length,1);assert.equal(matchOptions({label:'ZIP Code'},[{label:'78701, Austin, Travis, TX'}],'78701').length,1);assert.equal(matchOptions({label:'City',contactHint:{state:'Massachusetts'}},[{label:'Springfield, Hampden, MA'},{label:'Springfield, Sangamon, IL'}],'Springfield')[0].label,'Springfield, Hampden, MA');
+});
+test('split verification retrieves once and fills one digit in each box',async()=>{let calls=0;const written=[];const flow=new AccountFlow({startedAt:Date.now()-1000,profile:{resume:{contact:{email:'fixture@example.test'}}},verification:async()=>{calls++;return '123456'},fillSecret:async(f,v)=>written.push(v),navigate:async()=>{}});const result=await flow.step({url:'https://example.test/verify',fields:Array.from({length:6},(_,i)=>({id:'digit'+i,label:'Verification code',maxLength:1,secret:true,type:'text'})),navigation:[{text:'Verify'}]});assert.equal(result.handled,true);assert.equal(calls,1);assert.deepEqual(written,['1','2','3','4','5','6']);});
+test('digit labels identify split code inputs even without maxlength attributes',async()=>{const written=[];const flow=new AccountFlow({startedAt:Date.now()-1000,profile:{resume:{contact:{email:'fixture@example.test'}}},verification:async()=> '123456',fillSecret:async(f,v)=>written.push(v),navigate:async()=>{}});await flow.step({url:'https://example.test/verify',fields:Array.from({length:6},(_,i)=>({id:'pin-code-'+i,label:'Enter verification code digit '+(i+1)+' of six.',maxLength:-1,secret:true,type:'text'})),navigation:[{text:'Verify'}]});assert.deepEqual(written,['1','2','3','4','5','6']);});
+test('expired or absent codes trigger one explicit resend rather than recycling an old code',async()=>{let checks=0,resends=0,filled='';const page={url:'https://example.test/verify',fields:[{id:'code',label:'Verification code',type:'text'}],navigation:[{id:'verify',text:'Verify'},{id:'resend',text:'Send New Code'}]};const flow=new AccountFlow({startedAt:Date.now()-1000,profile:{resume:{contact:{email:'fixture@example.test'}}},verification:async()=>++checks===1?null:'123456',fillSecret:async(f,value)=>{filled=value},navigate:async(action,p,options)=>{if(action.id==='resend'){resends++;assert.equal(options.verificationRequest,true);options.beforeClick();}}});assert.equal((await flow.step(page)).recovered,true);await flow.step(page);assert.equal(resends,1);assert.equal(filled,'123456');});
+
+test('a stalled visual lookup terminates instead of holding a dropdown indefinitely',async()=>{
+ const {locateCurrent}=require('../desktop/visual.cjs');let clicks=0;
+ const view={getBounds:()=>({width:100,height:100}),webContents:{getURL:()=> 'https://example.test/apply'}};
+ await assert.rejects(locateCurrent({aiLocate:()=>new Promise(()=>{})},view,'ZIP option',undefined,20),/timed out/);
+ assert.equal(clicks,0);
+});
